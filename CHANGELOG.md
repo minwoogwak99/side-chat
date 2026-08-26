@@ -6,6 +6,13 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Model reasoning now renders in the panel as the main chat's collapsible
+  **Think** disclosure (same `DisclosureRow` chrome and summary/body
+  contract as `ReasoningRow`): one-line streaming summary while thinking,
+  click to expand the full reasoning text.
+
 ### Changed
 
 - The panel's first user row now displays the typed question instead of the

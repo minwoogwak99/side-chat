@@ -11,6 +11,8 @@ import type { AssistantChatData, ChatNode } from '@deepseek-ai/dsh-client-ui-con
 /** One rendered side-conversation row. */
 export interface SideChatRow {
   readonly role: 'user' | 'assistant'
+  /** `reasoning` rows render as the collapsible Think disclosure, like the main chat. */
+  readonly kind: 'text' | 'reasoning'
   readonly text: string
   /** `streaming` marks the still-running assistant output (running marker in the UI). */
   readonly state: 'final' | 'streaming'
@@ -69,21 +71,38 @@ function sideRowsOf(snapshot: ConversationSnapshot, firstQuestion: string | unde
         .trim()
       const shown = sawUserRow || firstQuestion === undefined ? text : firstQuestion
       sawUserRow = true
-      if (text !== '') rows.push({ role: 'user', text: shown, state: 'final' })
+      if (text !== '') rows.push({ role: 'user', kind: 'text', text: shown, state: 'final' })
     } else if (node.kind === 'assistant-step') {
       const data = node.data as AssistantChatData
-      const text = data.blocks
-        .flatMap(block => block.kind === 'text' ? [block.text] : [])
-        .join('\n\n')
-        .trim()
-      // A running step renders as a streaming row even before its first text
-      // block lands, so the user sees the turn in flight immediately.
-      if (text !== '' || data.status === 'running') {
-        rows.push({
-          role: 'assistant',
-          text,
-          state: data.status === 'running' ? 'streaming' : 'final',
-        })
+      const blocks = data.blocks
+      const running = data.status === 'running'
+      // Mirror AssistantMarkdown: blocks render in order, a reasoning block
+      // is "running" only as the step's tail block, text rows stream while
+      // the step runs.
+      const last = blocks.length - 1
+      let emitted = false
+      for (let i = 0; i < blocks.length; i++) {
+        const block = blocks[i]
+        if (block === undefined) continue
+        if (block.kind === 'reasoning') {
+          rows.push({
+            role: 'assistant',
+            kind: 'reasoning',
+            text: block.text,
+            state: running && i === last ? 'streaming' : 'final',
+          })
+          emitted = true
+        } else if (block.kind === 'text') {
+          const text = block.text.trim()
+          if (text === '') continue
+          rows.push({ role: 'assistant', kind: 'text', text, state: running ? 'streaming' : 'final' })
+          emitted = true
+        }
+      }
+      // A running step with no visible blocks yet still renders one
+      // streaming placeholder row, so the user sees the turn in flight.
+      if (!emitted && running) {
+        rows.push({ role: 'assistant', kind: 'text', text: '', state: 'streaming' })
       }
     }
   }

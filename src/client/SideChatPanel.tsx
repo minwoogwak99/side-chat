@@ -7,6 +7,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
+import { DisclosureRow, IconThinkOutline14 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { SideChatView } from './view.ts'
 import css from './SideChatPanel.module.css'
@@ -79,12 +80,16 @@ export function SideChatPanel({ useSideChat, ask, stop, close, t }: SideChatPane
         )}
         {view.rows.map((row, index) => (
           <div key={index} className={css.row} data-role={row.role} data-state={row.state}>
-            <div className={row.role === 'user' ? css.bubbleUser : css.assistantText}>
-              {row.text === '' && row.state === 'streaming' ? t('panel.generating') : row.text}
-              {row.text !== '' && row.state === 'streaming' && (
-                <span className={css.streaming}>▍</span>
+            {row.kind === 'reasoning'
+              ? <ThinkRow text={row.text} running={row.state === 'streaming'} />
+              : (
+                <div className={row.role === 'user' ? css.bubbleUser : css.assistantText}>
+                  {row.text === '' && row.state === 'streaming' ? t('panel.generating') : row.text}
+                  {row.text !== '' && row.state === 'streaming' && (
+                    <span className={css.streaming}>▍</span>
+                  )}
+                </div>
               )}
-            </div>
           </div>
         ))}
         {view.running && view.rows[view.rows.length - 1]?.state !== 'streaming' && (
@@ -124,6 +129,61 @@ export function SideChatPanel({ useSideChat, ask, stop, close, t }: SideChatPane
           </button>
         </div>
       </div>
+    </div>
+  )
+}
+
+/** First line of a settled Think summary (ReasoningRow contract). */
+function firstLine(text: string): string {
+  const newline = text.indexOf('\n')
+  return newline === -1 ? text : text.slice(0, newline)
+}
+
+/** Latest line of a streaming Think summary (ReasoningRow contract). */
+function latestLine(text: string): string {
+  const visible = text.trimEnd()
+  const newline = visible.lastIndexOf('\n')
+  return newline === -1 ? visible : visible.slice(newline + 1)
+}
+
+/**
+ * Assistant reasoning as the main chat's Think disclosure: collapsed summary
+ * row (chevron + one-line preview, sweep while running), expanded body with
+ * the full reasoning text. Same DisclosureRow chrome as ReasoningRow.
+ */
+function ThinkRow({ text, running }: { text: string; running: boolean }) {
+  const [expanded, setExpanded] = useState(false)
+  const summaryRef = useRef<HTMLSpanElement>(null)
+  const summary = running ? latestLine(text) : firstLine(text)
+  useEffect(() => {
+    // Follow the streaming tail like ReasoningRow's throttled scroll.
+    const element = summaryRef.current
+    if (running && element !== null) element.scrollLeft = element.scrollWidth - element.clientWidth
+  }, [running, summary])
+  return (
+    <div className={css.thinkRoot} data-state={running ? 'running' : 'ok'}>
+      <DisclosureRow
+        rowClassName={css.thinkRow}
+        leadingClassName={css.thinkLeading}
+        titleClassName={css.thinkTitle}
+        chevronClassName={css.thinkChevron}
+        icon={<IconThinkOutline14 size={14} />}
+        title="Think"
+        open={expanded}
+        expandable
+        expandOnRowClick
+        onToggle={() => { setExpanded(value => !value) }}
+        collapsedContent={(
+          <>
+            <span className={css.thinkSeparator} aria-hidden />
+            <span ref={summaryRef} className={css.thinkSummary} data-follow-end={running || undefined}>
+              {summary}
+            </span>
+          </>
+        )}
+      >
+        <div className={css.thinkBody}>{text}</div>
+      </DisclosureRow>
     </div>
   )
 }

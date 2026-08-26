@@ -64,9 +64,9 @@ describe('deriveSideView', () => {
     const view = deriveSideView(snapshot, 'q', { status: 'idle', firstQuestion: 'what?' })
     // First user row renders the typed question; later user rows pass through.
     expect(view.rows).toEqual([
-      { role: 'user', text: 'what?', state: 'final' },
-      { role: 'assistant', text: 'answer one', state: 'final' },
-      { role: 'user', text: 'second question', state: 'final' },
+      { role: 'user', kind: 'text', text: 'what?', state: 'final' },
+      { role: 'assistant', kind: 'text', text: 'answer one', state: 'final' },
+      { role: 'user', kind: 'text', text: 'second question', state: 'final' },
     ])
   })
 
@@ -100,9 +100,9 @@ describe('deriveSideView', () => {
     expect(view.ready).toBe(true)
     expect(view.running).toBe(true)
     expect(view.rows).toEqual([
-      { role: 'user', text: 'question one', state: 'final' },
-      { role: 'assistant', text: 'settled answer', state: 'final' },
-      { role: 'assistant', text: 'partial', state: 'streaming' },
+      { role: 'user', kind: 'text', text: 'question one', state: 'final' },
+      { role: 'assistant', kind: 'text', text: 'settled answer', state: 'final' },
+      { role: 'assistant', kind: 'text', text: 'partial', state: 'streaming' },
     ])
   })
 
@@ -117,7 +117,55 @@ describe('deriveSideView', () => {
       running: true,
     })
     expect(deriveSideView(snapshot, 'q', { status: 'idle' }).rows).toEqual([
-      { role: 'assistant', text: '', state: 'streaming' },
+      { role: 'assistant', kind: 'text', text: '', state: 'streaming' },
+    ])
+  })
+
+  it('renders reasoning blocks as Think rows before the answer text', () => {
+    const snapshot = sideSnapshot({
+      order: ['a1'],
+      get: () => ({
+        key: 'a1',
+        kind: 'assistant-step',
+        data: {
+          status: 'running',
+          turn: 1,
+          step: 1,
+          time: 0,
+          blocks: [
+            { kind: 'reasoning', text: 'let me think\nabout this' },
+            { kind: 'text', text: 'the answer' },
+          ],
+        },
+      }),
+      running: true,
+    })
+    // Reasoning precedes the text; only the step's TAIL block is "running",
+    // so the settled reasoning row does not sweep (AssistantMarkdown contract).
+    expect(deriveSideView(snapshot, 'q', { status: 'idle' }).rows).toEqual([
+      { role: 'assistant', kind: 'reasoning', text: 'let me think\nabout this', state: 'final' },
+      { role: 'assistant', kind: 'text', text: 'the answer', state: 'streaming' },
+    ])
+  })
+
+  it('marks a reasoning block as streaming while it is the tail block', () => {
+    const snapshot = sideSnapshot({
+      order: ['a1'],
+      get: () => ({
+        key: 'a1',
+        kind: 'assistant-step',
+        data: {
+          status: 'running',
+          turn: 1,
+          step: 1,
+          time: 0,
+          blocks: [{ kind: 'reasoning', text: 'thinking so far' }],
+        },
+      }),
+      running: true,
+    })
+    expect(deriveSideView(snapshot, 'q', { status: 'idle' }).rows).toEqual([
+      { role: 'assistant', kind: 'reasoning', text: 'thinking so far', state: 'streaming' },
     ])
   })
 

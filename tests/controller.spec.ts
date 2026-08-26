@@ -178,8 +178,8 @@ describe('SideChatController streaming', () => {
     sideSession.notify()
     let view = views.at(-1)!
     expect(view.running).toBe(true)
-    expect(view.rows[0]).toEqual({ role: 'user', text: 'what does it mean?', state: 'final' })
-    expect(view.rows.at(-1)).toEqual({ role: 'assistant', text: '', state: 'streaming' })
+    expect(view.rows[0]).toEqual({ role: 'user', kind: 'text', text: 'what does it mean?', state: 'final' })
+    expect(view.rows.at(-1)).toEqual({ role: 'assistant', kind: 'text', text: '', state: 'streaming' })
 
     // Tokens land mid-turn.
     sideSession.snapshot = snapshotOf([
@@ -188,7 +188,7 @@ describe('SideChatController streaming', () => {
     ], true)
     sideSession.notify()
     view = views.at(-1)!
-    expect(view.rows.at(-1)).toEqual({ role: 'assistant', text: 'it mea', state: 'streaming' })
+    expect(view.rows.at(-1)).toEqual({ role: 'assistant', kind: 'text', text: 'it mea', state: 'streaming' })
 
     // Turn settles: same text, final state, running cleared; the display
     // question stays the typed one for the whole thread.
@@ -199,7 +199,7 @@ describe('SideChatController streaming', () => {
     sideSession.notify()
     view = views.at(-1)!
     expect(view.running).toBe(false)
-    expect(view.rows.at(-1)).toEqual({ role: 'assistant', text: 'it means this', state: 'final' })
+    expect(view.rows.at(-1)).toEqual({ role: 'assistant', kind: 'text', text: 'it means this', state: 'final' })
     expect(view.rows[0]!.text).toBe('what does it mean?')
   })
 

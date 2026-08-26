@@ -67,7 +67,8 @@ dsh plugin --profile web add /path/to/dsh-plugin-side-chat -w
 
 1. Drag-select a passage inside an **assistant** message in the chat.
 2. Click the **Ask about this** button that appears above the selection.
-3. Ask a question in the side panel; the answer streams live.
+3. Ask a question in the side panel; the answer streams live. Reasoning
+   shows as a collapsible **Think** row, just like the main chat.
 4. Keep asking follow-ups, or close the panel — the thread is discarded.
 
 Stop cancels the running answer but keeps the thread open for more
