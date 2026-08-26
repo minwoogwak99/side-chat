@@ -15,6 +15,10 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The first prompt's `<recent_conversation>` section now carries the last 4
+  transcript entries (about two exchanges, ≤6,000 chars) instead of the
+  last 12 — the selected passage and its containing message remain the
+  primary context.
 - The panel's first user row now displays the typed question instead of the
   assembled context prompt sent on the wire — internal framing stays out of
   the chat transcript.

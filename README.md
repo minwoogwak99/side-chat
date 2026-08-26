@@ -16,8 +16,9 @@ The side conversation runs in its own throwaway session:
 - **One-shot** — closing the panel (or starting a new selection) cancels any
   running turn and discards the thread. Nothing accumulates.
 - **Context-aware** — the first question carries the selected passage, the
-  full assistant message it came from, and the last 12 turns of the main
-  chat, so the model answers with full context. The panel shows only what
+  full assistant message it came from, and the last 4 transcript entries of
+  the main chat (about two exchanges), so the model answers with context.
+  The panel shows only what
   you typed — the assembled context prompt never appears as a chat bubble.
   Follow-up questions are plain messages in the same thread.
 
@@ -88,7 +89,7 @@ questions.
   grouping surface), opens its conversation window without staging it, and
   sends one context-bearing prompt:
   `<selected_passage>`, `<containing_assistant_message>`,
-  `<recent_conversation>` (last 12 turns, each clipped), `<question>`.
+  `<recent_conversation>` (last 4 transcript entries, each clipped), `<question>`.
 - Later asks are plain messages into the same session; the panel subscribes
   to the session snapshot and republishes per frame, so partial assistant
   text renders while streaming.

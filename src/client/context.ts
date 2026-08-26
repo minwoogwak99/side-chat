@@ -15,8 +15,8 @@ const QUOTE_MAX_CHARS = 4000
 const MESSAGE_MAX_CHARS = 4000
 /** Cap for one transcript entry inside the prompt. */
 const ENTRY_MAX_CHARS = 1500
-/** Number of trailing transcript entries the prompt carries. */
-const TRANSCRIPT_ENTRIES = 12
+/** Number of trailing transcript entries the prompt carries (≈2 exchanges). */
+const TRANSCRIPT_ENTRIES = 4
 /** Marker appended to a clipped section. */
 const CLIPPED = '\n…[clipped]'
 

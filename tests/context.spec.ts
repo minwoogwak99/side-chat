@@ -127,9 +127,9 @@ describe('buildSideChatPrompt', () => {
       })),
     })
     expect(prompt).toContain('…[clipped]')
-    // 20 entries, only the last 12 ride along.
-    expect(prompt).toContain('[user]: entry 8')
-    expect(prompt).not.toContain('[user]: entry 7 ')
+    // 20 entries, only the last 4 ride along.
+    expect(prompt).toContain('[user]: entry 16')
+    expect(prompt).not.toContain('[user]: entry 15 ')
     // The huge sections were clipped well below their raw lengths.
     expect(prompt.length).toBeLessThan(30000)
   })
