@@ -79,48 +79,58 @@
   -webkit-line-clamp: 4;
 }
 
+/* Transcript mirrors the main chat design contracts:
+   - row rhythm: ChatView.module.css .column (16px gap, 16px scroll padding)
+   - user bubble: MessageItem.module.css .userRow/.bubble (--dsw-specific-bubble
+     fill, 22px radius, 10x16 padding, 16/24 type, right-aligned, 82% cap)
+   - assistant flow: AssistantMarkdown.module.css .root (no bubble, plain
+     full-width text, 16/28 type) */
+
 .body {
+  display: flex;
   flex: 1;
+  flex-direction: column;
+  gap: 16px;
   min-height: 0;
-  padding: 12px;
+  padding: 16px;
   overflow-y: auto;
 }
 
 .empty {
-  padding: 8px 0;
-  font-size: 13px;
-  line-height: 20px;
+  padding: 2px 0;
+  font-size: 14px;
+  line-height: 24px;
   color: var(--dsw-alias-label-tertiary);
 }
 
 .row {
   display: flex;
-  margin-bottom: 10px;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .row[data-role='user'] {
-  justify-content: flex-end;
+  align-items: flex-end;
 }
 
-.bubbleUser,
-.bubbleAssistant {
-  max-width: 92%;
-  padding: 8px 10px;
-  border-radius: 10px;
-  font-size: 13px;
-  line-height: 20px;
+.bubbleUser {
+  max-width: min(525px, 82%);
+  padding: 10px 16px;
+  border-radius: 22px;
+  background: var(--dsw-specific-bubble);
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--dsw-alias-label-primary);
   word-break: break-word;
   white-space: pre-wrap;
 }
 
-.bubbleUser {
-  background: var(--dsw-alias-interactive-bg-hover-accent);
+.assistantText {
+  font-size: 16px;
+  line-height: 28px;
   color: var(--dsw-alias-label-primary);
-}
-
-.bubbleAssistant {
-  background: var(--dsw-alias-interactive-bg-hover);
-  color: var(--dsw-alias-label-primary);
+  word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .streaming {

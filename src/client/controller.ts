@@ -55,6 +55,8 @@ interface SideChatRecord {
   epoch: number
   /** True once the side session is archived (hidden from every grouping surface). */
   hidden: boolean
+  /** Typed text of the first ask (the panel's display for the assembled prompt row). */
+  firstQuestion: string | undefined
 }
 
 /** Static empty source for scopes whose session has no record (yet). */
@@ -145,6 +147,9 @@ export class SideChatController {
         }
         record.sideSessionId = sideId
         record.status = 'idle'
+        // Display text for the first user row: the wire prompt is the
+        // assembled context blob, the panel shows what the user typed.
+        record.firstQuestion = text
         // Hide the one-shot session from every grouping surface for its
         // whole life, not just after close. Failure only means the row stays
         // visible until retirement retries the archive.
@@ -234,6 +239,7 @@ export class SideChatController {
         unsubscribe: undefined,
         epoch: 0,
         hidden: false,
+        firstQuestion: undefined,
       }
       this.#records.set(sessionId, record)
     }
@@ -256,6 +262,7 @@ export class SideChatController {
     record.error = undefined
     record.quote = { nodeKey: '', text: '', rect: { top: 0, left: 0, bottom: 0, right: 0 } }
     record.hidden = false
+    record.firstQuestion = undefined
     if (sideId !== undefined) await this.#discardSession(sideId, hidden)
     this.#publish(record)
   }
@@ -370,6 +377,7 @@ export class SideChatController {
     record.store.set(deriveSideView(snapshot, record.quote.text, {
       status: record.status,
       error: record.error,
+      firstQuestion: record.firstQuestion,
     }))
   }
 }

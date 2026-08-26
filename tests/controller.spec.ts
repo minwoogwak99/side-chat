@@ -167,35 +167,40 @@ describe('SideChatController streaming', () => {
     controller.open(hit('arcane'))
     const views = trackViews()
     await controller.ask(MAIN, 'what does it mean?')
+    // The wire's first user message is the assembled context prompt.
+    const PROMPT = 'You are answering in a side conversation … <question>'
 
-    // Turn starts: running view with an empty streaming assistant row.
+    // Turn starts: the panel shows the typed question, not the prompt.
     sideSession.snapshot = snapshotOf([
-      USER('u1', 'what does it mean?'),
+      USER('u1', PROMPT),
       ASSISTANT('a1', '', 'running'),
     ], true)
     sideSession.notify()
     let view = views.at(-1)!
     expect(view.running).toBe(true)
+    expect(view.rows[0]).toEqual({ role: 'user', text: 'what does it mean?', state: 'final' })
     expect(view.rows.at(-1)).toEqual({ role: 'assistant', text: '', state: 'streaming' })
 
     // Tokens land mid-turn.
     sideSession.snapshot = snapshotOf([
-      USER('u1', 'what does it mean?'),
+      USER('u1', PROMPT),
       ASSISTANT('a1', 'it mea', 'running'),
     ], true)
     sideSession.notify()
     view = views.at(-1)!
     expect(view.rows.at(-1)).toEqual({ role: 'assistant', text: 'it mea', state: 'streaming' })
 
-    // Turn settles: same text, final state, running cleared.
+    // Turn settles: same text, final state, running cleared; the display
+    // question stays the typed one for the whole thread.
     sideSession.snapshot = snapshotOf([
-      USER('u1', 'what does it mean?'),
+      USER('u1', PROMPT),
       ASSISTANT('a1', 'it means this', 'settled'),
     ], false)
     sideSession.notify()
     view = views.at(-1)!
     expect(view.running).toBe(false)
     expect(view.rows.at(-1)).toEqual({ role: 'assistant', text: 'it means this', state: 'final' })
+    expect(view.rows[0]!.text).toBe('what does it mean?')
   })
 
   it('sends follow-up asks as plain text into the same side session', async () => {

@@ -79,7 +79,7 @@ export function SideChatPanel({ useSideChat, ask, stop, close, t }: SideChatPane
         )}
         {view.rows.map((row, index) => (
           <div key={index} className={css.row} data-role={row.role} data-state={row.state}>
-            <div className={row.role === 'user' ? css.bubbleUser : css.bubbleAssistant}>
+            <div className={row.role === 'user' ? css.bubbleUser : css.assistantText}>
               {row.text === '' && row.state === 'streaming' ? t('panel.generating') : row.text}
               {row.text !== '' && row.state === 'streaming' && (
                 <span className={css.streaming}>▍</span>
@@ -89,7 +89,7 @@ export function SideChatPanel({ useSideChat, ask, stop, close, t }: SideChatPane
         ))}
         {view.running && view.rows[view.rows.length - 1]?.state !== 'streaming' && (
           <div className={css.row} data-role="assistant" data-state="streaming">
-            <div className={css.bubbleAssistant}>{t('panel.generating')}</div>
+            <div className={css.assistantText}>{t('panel.generating')}</div>
           </div>
         )}
         {view.error !== undefined && <div className={css.error} role="alert">{view.error}</div>}

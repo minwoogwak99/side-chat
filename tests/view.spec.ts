@@ -35,6 +35,41 @@ describe('deriveSideView', () => {
     })
   })
 
+  it('shows the typed first question instead of the assembled prompt row', () => {
+    const snapshot = sideSnapshot({
+      order: ['u1', 'a1', 'u2'],
+      get: (key) => {
+        if (key === 'u1') {
+          // The wire's first user message is the assembled context prompt.
+          return {
+            key,
+            kind: 'user',
+            data: { kind: 'user', seq: 1, time: 0, content: [{ type: 'text', text: 'You are answering in a side conversation… <question>\nwhat?\n</question>' }], source: {} },
+          }
+        }
+        if (key === 'a1') {
+          return {
+            key,
+            kind: 'assistant-step',
+            data: { status: 'settled', turn: 1, step: 1, time: 0, blocks: [{ kind: 'text', text: 'answer one' }] },
+          }
+        }
+        return {
+          key,
+          kind: 'user',
+          data: { kind: 'user', seq: 3, time: 0, content: [{ type: 'text', text: 'second question' }], source: {} },
+        }
+      },
+    })
+    const view = deriveSideView(snapshot, 'q', { status: 'idle', firstQuestion: 'what?' })
+    // First user row renders the typed question; later user rows pass through.
+    expect(view.rows).toEqual([
+      { role: 'user', text: 'what?', state: 'final' },
+      { role: 'assistant', text: 'answer one', state: 'final' },
+      { role: 'user', text: 'second question', state: 'final' },
+    ])
+  })
+
   it('folds user and assistant rows with the streaming state', () => {
     const snapshot = sideSnapshot({
       order: ['u1', 'a1', 'a2'],

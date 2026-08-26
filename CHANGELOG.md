@@ -4,6 +4,23 @@ All notable changes to this project are documented in this file. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning
 follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- The panel's first user row now displays the typed question instead of the
+  assembled context prompt sent on the wire — internal framing stays out of
+  the chat transcript.
+- Panel transcript styling mirrors the main chat design contracts: user
+  bubbles use the DeepSeek bubble fill (22px radius, 16/24 type, right
+  aligned, 82% width cap), assistant messages render as plain full-width
+  16/28 text without a bubble, rows follow the main chat's 16px rhythm.
+
+### Verified
+
+- Follow-up questions (after the first answer) are sent as the typed text
+  only — the context prompt is assembled once, on the first message.
+
 ## [0.1.0] - 2026-08-25
 
 ### Added

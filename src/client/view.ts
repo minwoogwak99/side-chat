@@ -22,6 +22,12 @@ export interface SideChatRecordState {
   readonly status: 'idle' | 'creating' | 'error'
   /** Error copy for the `error` status; otherwise undefined. */
   readonly error?: string | undefined
+  /**
+   * The typed text of the first ask. The side session's first user message is
+   * the assembled context prompt; the panel displays this text for that row
+   * instead, so the internal framing never appears as a chat bubble.
+   */
+  readonly firstQuestion?: string | undefined
 }
 
 /** The complete panel view published through the hooks compartment. */
@@ -44,9 +50,14 @@ function displayQuote(text: string): string {
   return text.length <= QUOTE_DISPLAY_CHARS ? text : `${text.slice(0, QUOTE_DISPLAY_CHARS)}…`
 }
 
-/** Transcript entry plus per-node streaming flag, in flow order. */
-function sideRowsOf(snapshot: ConversationSnapshot): readonly SideChatRow[] {
+/**
+ * Transcript entries plus per-node streaming flags, in flow order. The first
+ * user row (the assembled context prompt on the wire) renders the typed
+ * `firstQuestion` instead — internal framing stays out of the panel.
+ */
+function sideRowsOf(snapshot: ConversationSnapshot, firstQuestion: string | undefined): readonly SideChatRow[] {
   const rows: SideChatRow[] = []
+  let sawUserRow = false
   for (const key of snapshot.chat.order) {
     const node = snapshot.chat.nodes.get(key) as ChatNode | undefined
     if (node === undefined) continue
@@ -56,7 +67,9 @@ function sideRowsOf(snapshot: ConversationSnapshot): readonly SideChatRow[] {
         .filter(text => text !== '')
         .join('\n\n')
         .trim()
-      if (text !== '') rows.push({ role: 'user', text, state: 'final' })
+      const shown = sawUserRow || firstQuestion === undefined ? text : firstQuestion
+      sawUserRow = true
+      if (text !== '') rows.push({ role: 'user', text: shown, state: 'final' })
     } else if (node.kind === 'assistant-step') {
       const data = node.data as AssistantChatData
       const text = data.blocks
@@ -104,6 +117,6 @@ export function deriveSideView(
     quote: displayQuote(quote),
     ready: snapshot !== undefined,
     running: snapshot?.running ?? false,
-    rows: snapshot === undefined ? [] : sideRowsOf(snapshot),
+    rows: snapshot === undefined ? [] : sideRowsOf(snapshot, state.firstQuestion),
   }
 }

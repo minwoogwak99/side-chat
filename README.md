@@ -17,8 +17,9 @@ The side conversation runs in its own throwaway session:
   running turn and discards the thread. Nothing accumulates.
 - **Context-aware** — the first question carries the selected passage, the
   full assistant message it came from, and the last 12 turns of the main
-  chat, so the model answers with full context. Follow-up questions are
-  plain messages in the same thread.
+  chat, so the model answers with full context. The panel shows only what
+  you typed — the assembled context prompt never appears as a chat bubble.
+  Follow-up questions are plain messages in the same thread.
 
 ## Requirements
 
