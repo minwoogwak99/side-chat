@@ -1,0 +1,7 @@
+# side-chat bundle patch: inserts this package's Loader row.
+# The row is simultaneously the host half (empty node apply) and the browser
+# roster row (package.json dsh.client + ./client export drive the client-module
+# scan). Applied as the last profile bundle layer, after dsh-base and dsh-web-app.
+- insert:
+    - id: side-chat
+      name: 'dsh-plugin-side-chat'
