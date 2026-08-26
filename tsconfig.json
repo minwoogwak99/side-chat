@@ -1,8 +1,7 @@
 {
-  // Standalone typecheck (no emit). Harness packages resolve through
-  // node_modules/@deepseek-ai symlinks created by scripts/link-harness.mjs
-  // (run automatically by `pnpm run typecheck`); their built lib/types
-  // declarations load under skipLibCheck.
+  // Standalone typecheck (no emit). Published Harness declarations are
+  // regular development dependencies, so a clean clone needs no sibling
+  // Harness checkout or machine-local symlink setup.
   "compilerOptions": {
     "target": "es2024",
     "module": "esnext",

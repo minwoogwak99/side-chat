@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck, test, and build
+        run: npm run verify
+
+      - name: Ensure prebuilt bundles are current
+        run: git diff --exit-code -- lib
+
+      - name: Pack the release artifact
+        run: npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP"
+
+      - name: Test the standard npx Web installation path
+        env:
+          DSH_HOME: ${{ runner.temp }}/dsh-home
+        run: |
+          npx --yes @deepseek-ai/dsh@0.1.1-rc.2 plugin --profile web add "$RUNNER_TEMP"/dsh-plugin-side-chat-*.tgz
+          node --input-type=module -e "import { readFileSync } from 'node:fs'; import { join } from 'node:path'; const home = process.env.DSH_HOME; const profile = JSON.parse(readFileSync(join(home, 'profiles/web/package.json'), 'utf8')); if (!profile.dsh.profile.bundles.includes('dsh-plugin-side-chat')) throw new Error('bundle missing from web profile'); const plugin = JSON.parse(readFileSync(join(home, 'profiles/web/node_modules/dsh-plugin-side-chat/package.json'), 'utf8')); if (plugin.name !== 'dsh-plugin-side-chat' || plugin.dsh?.client?.platform !== 'web') throw new Error('installed plugin manifest mismatch')"
+          npx --yes @deepseek-ai/dsh@0.1.1-rc.2 --profile web --dump-config > "$RUNNER_TEMP/dsh-web-config.yml"
+          grep -q "name: dsh-plugin-side-chat" "$RUNNER_TEMP/dsh-web-config.yml"

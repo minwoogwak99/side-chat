@@ -11,11 +11,13 @@
  *   class map plus an idempotent injected <style> tag.
  */
 import { readFile } from 'node:fs/promises'
-import { dirname, resolve as resolvePath } from 'node:path'
+import { dirname, relative, resolve as resolvePath } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { TsdownPlugin, UserConfig } from 'tsdown'
 import { transform } from 'lightningcss'
 
 const ID = 'dsh-plugin-side-chat'
+const PACKAGE_ROOT = dirname(fileURLToPath(import.meta.url))
 
 /** Module-table specifiers shared by every dynamic bundle (web platform baseline). */
 const CLIENT_EXTERNALS = new Set([
@@ -55,18 +57,22 @@ const cssModulesInline: TsdownPlugin = {
   name: 'side-chat-css-modules-inline',
   resolveId(source, importer) {
     if (!source.endsWith('.module.css')) return null
-    // Importers here are real src paths (this config builds from src, not
-    // from tsc-emitted lib/types), so plain dirname resolution is exact.
-    const abs = importer !== undefined ? resolvePath(dirname(importer), source) : source
-    return CSS_VIRTUAL_PREFIX + abs + CSS_VIRTUAL_SUFFIX
+    const fileId = importer === undefined
+      ? resolvePath(PACKAGE_ROOT, source)
+      : resolvePath(dirname(importer), source)
+    const portableId = relative(PACKAGE_ROOT, fileId).replaceAll('\\', '/')
+    return CSS_VIRTUAL_PREFIX + portableId + CSS_VIRTUAL_SUFFIX
   },
   async load(virtualId) {
     if (!virtualId.startsWith(CSS_VIRTUAL_PREFIX)) return null
-    const fileId = virtualId.slice(CSS_VIRTUAL_PREFIX.length, -CSS_VIRTUAL_SUFFIX.length)
+    const portableId = virtualId.slice(CSS_VIRTUAL_PREFIX.length, -CSS_VIRTUAL_SUFFIX.length)
+    const fileId = resolvePath(PACKAGE_ROOT, portableId)
     this.addWatchFile(fileId)
     const source = await readFile(fileId)
     const { code, exports: cssExports } = transform({
-      filename: fileId,
+      // Lightning CSS includes the filename in CSS Module hashes. A
+      // package-relative value keeps committed bundles machine-independent.
+      filename: portableId,
       code: source,
       cssModules: { pattern: '[hash]_[local]' },
       minify: true,

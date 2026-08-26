@@ -12,6 +12,8 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   **Think** disclosure (same `DisclosureRow` chrome and summary/body
   contract as `ReasoningRow`): one-line streaming summary while thinking,
   click to expand the full reasoning text.
+- Public package metadata, an npx-first Web installation guide, and CI that
+  installs the packed artifact into an isolated Harness `web` profile.
 
 ### Changed
 
@@ -26,6 +28,10 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   bubbles use the DeepSeek bubble fill (22px radius, 16/24 type, right
   aligned, 82% width cap), assistant messages render as plain full-width
   16/28 text without a bubble, rows follow the main chat's 16px rhythm.
+- Clean-clone development now resolves published Harness declarations from
+  the package lock instead of linking a machine-local Harness checkout.
+- The panel view uses a plugin-local observable snapshot, removing the last
+  runtime test alias to Harness source files.
 
 ### Verified
 
@@ -50,4 +56,4 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   thread) controls.
 - Chinese and English UI dictionaries (`sideChat` namespace).
 - Unit tests for context assembly, selection reading, view folding, and the
-  controller state machine (26 tests).
+  controller state machine (29 tests).

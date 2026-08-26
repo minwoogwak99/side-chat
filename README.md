@@ -1,134 +1,175 @@
-# dsh-plugin-side-chat
+# Side Chat for DeepSeek Harness
 
-A [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) web-client
-plugin: **ask follow-up questions about any passage of an AI answer without
-polluting your main chat history.**
+`dsh-plugin-side-chat` is a DeepSeek Harness Web plugin for asking follow-up questions about a selected passage without adding those questions to the main conversation.
 
-Select a word or sentence in an assistant message → an **Ask about this**
-button pops up → a side-chat panel opens in the right-hand details column
-(your existing chat stays visible) → ask away. Answers stream token by token,
-just like the main conversation.
+Select text in an assistant response, choose **Ask about this**, and continue in a temporary side conversation rendered in the right-hand details column. The main conversation remains visible and unchanged.
 
-The side conversation runs in its own throwaway session:
+> Compatibility: version 0.1.0 targets DeepSeek Harness 0.1.1-rc.2, Cordis 4.0.1, and Node.js 22.19+ or 24+.
 
-- **Hidden** — the session never appears in the sidebar or history. It is
-  archived the moment it is created.
-- **One-shot** — closing the panel (or starting a new selection) cancels any
-  running turn and discards the thread. Nothing accumulates.
-- **Context-aware** — the first question carries the selected passage, the
-  full assistant message it came from, and the last 4 transcript entries of
-  the main chat (about two exchanges), so the model answers with context.
-  The panel shows only what
-  you typed — the assembled context prompt never appears as a chat bubble.
-  Follow-up questions are plain messages in the same thread.
+## Features
 
-## Requirements
+- Opens from a text selection inside an assistant message.
+- Streams answers and reasoning in the side panel.
+- Preserves the main conversation and composer while the panel is open.
+- Includes the selected passage, its containing assistant message, and the four most recent transcript entries in the first side-chat prompt.
+- Sends later follow-up questions as plain messages in the same side session.
+- Cancels active generation when the user presses Stop, closes the panel, starts another selection, or unloads the plugin.
+- Provides English and Simplified Chinese interface copy.
 
-- A [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness)
-  checkout with the `dsh` CLI runnable from it.
-- A profile that serves the web app (e.g. the default `web` profile, or your
-  own combination of `dsh-base` + `dsh-web-app`).
+## Quick start for `npx` Web users
 
-## Install
+`npx @deepseek-ai/dsh web` starts the built-in `web` profile. Install Side Chat into that same profile, then start or restart Harness.
 
-From GitHub, into a profile of your choice:
+The current `dsh plugin` command delegates package management to `pnpm`, so `pnpm` must be available on `PATH` even when the Harness CLI is invoked through `npx`:
 
-```sh
-dsh plugin --profile web add github:<owner>/dsh-plugin-side-chat -w
+```bash
+npm install --global pnpm
 ```
 
-Notes:
+After `dsh-plugin-side-chat` has been published to npm:
 
-- `-w` is required: the profile directory is a pnpm workspace root, and pnpm
-  refuses root installs without it (the `dsh plugin` command forwards to
-  pnpm).
-- No build step runs on install — `lib/` build artifacts are committed to the
-  repository, so git installs work with no `prepare` script and no
-  `allowBuilds` configuration.
-- Restart the `dsh` server after installing: the client-module graph caches
-  package manifests at startup.
-
-Verify it loaded: open the web UI and check
-`/plugins/dsh-plugin-side-chat/client.js` returns 200, or inspect
-`window.__DSH_BOOT__.entries` for the `dsh-plugin-side-chat` row.
-
-### Uninstall
-
-```sh
-dsh plugin --profile web remove dsh-plugin-side-chat
+```bash
+npx @deepseek-ai/dsh plugin --profile web add dsh-plugin-side-chat
+npx @deepseek-ai/dsh web
 ```
 
-### Install from a local checkout (development)
+Install a pinned GitHub revision before or instead of an npm release:
 
-```sh
-dsh plugin --profile web add /path/to/dsh-plugin-side-chat -w
+```bash
+npx @deepseek-ai/dsh plugin --profile web add \
+  github:minwoogwak99/side-chat#<tag-or-commit>
+npx @deepseek-ai/dsh web
 ```
+
+One-off `npx` execution does not make the plugin installation temporary. Harness stores the profile and its plugin dependencies under `$DSH_HOME/profiles/web` (`~/.dsh/profiles/web` by default), and later `npx @deepseek-ai/dsh web` invocations reuse them.
+
+This release is tested with `@deepseek-ai/dsh@0.1.1-rc.2`. Harness is in developer preview, so pin the same CLI version for reproducible installation and startup:
+
+```bash
+npx @deepseek-ai/dsh@0.1.1-rc.2 plugin --profile web add dsh-plugin-side-chat
+npx @deepseek-ai/dsh@0.1.1-rc.2 web
+```
+
+Update or remove the npm package with the same profile:
+
+```bash
+npx @deepseek-ai/dsh plugin --profile web update dsh-plugin-side-chat@latest
+npx @deepseek-ai/dsh plugin --profile web remove dsh-plugin-side-chat
+```
+
+Restart the Web process after installing, updating, or removing the plugin so Harness rebuilds the Browser client-module graph.
+
+## Install into another profile
+
+Any profile that includes the Harness Web application can host Side Chat:
+
+```bash
+npx @deepseek-ai/dsh plugin --profile <profile> add dsh-plugin-side-chat
+```
+
+For a local checkout during development:
+
+```bash
+npx @deepseek-ai/dsh plugin --profile <profile> add /absolute/path/to/side-chat
+```
+
+If `dsh` is already installed on `PATH`, omit the `npx @deepseek-ai/dsh` prefix. When working from the DeepSeek Harness source repository, the equivalent command is `pnpm dsh plugin --profile <profile> add <package-spec>`.
+
+No install-time build is required. The repository and npm package include prebuilt `lib/index.js` and `lib/client.js` artifacts, so GitHub installs do not need a `prepare` script or pnpm `allowBuilds` configuration.
 
 ## Usage
 
-1. Drag-select a passage inside an **assistant** message in the chat.
-2. Click the **Ask about this** button that appears above the selection.
-3. Ask a question in the side panel; the answer streams live. Reasoning
-   shows as a collapsible **Think** row, just like the main chat.
-4. Keep asking follow-ups, or close the panel — the thread is discarded.
+1. Drag-select a passage inside an assistant message.
+2. Select **Ask about this** above the selection.
+3. Ask a question in the right-hand panel. The answer streams as it is generated, and reasoning appears in a collapsible **Think** row.
+4. Continue with follow-up questions, press Stop to cancel only the current answer, or close the panel to retire the side conversation.
 
-Stop cancels the running answer but keeps the thread open for more
-questions.
+## Architecture
 
-## How it works
+The package is one Harness bundle with an empty Host entry and a Browser client entry:
 
-- A `shell.overlay` slot entry watches the document selection. A selection
-  counts only when both endpoints sit inside the same assistant row
-  (`[data-chat-flow-kind="assistant-step"]` — the ui-conversation DOM
-  contract).
-- Clicking the button mounts a `details` slot entry at `priority: -100`,
-  shadowing the stock DetailsPanel for the panel's lifetime, and opens the
-  details column. The main conversation column is never covered.
-- The first ask creates a blank session in the main session's workspace
-  (`workspaces.connectWorkspace`), immediately archives it (hidden from every
-  grouping surface), opens its conversation window without staging it, and
-  sends one context-bearing prompt:
-  `<selected_passage>`, `<containing_assistant_message>`,
-  `<recent_conversation>` (last 4 transcript entries, each clipped), `<question>`.
-- Later asks are plain messages into the same session; the panel subscribes
-  to the session snapshot and republishes per frame, so partial assistant
-  text renders while streaming.
-- Close (or a new selection, or plugin unload) bumps an epoch, cancels the
-  running turn, and resets the record; a session created mid-close is
-  discarded when it arrives.
-
-## Build from source
-
-Type-checking resolves `@deepseek-ai/*` packages from a harness checkout:
-either a sibling `../deepseek-harness` directory or an explicit
-`DSH_HARNESS_ROOT`.
-
-```sh
-pnpm install
-pnpm run build   # typecheck + tsdown → lib/index.js, lib/client.js
-pnpm test
+```text
+side-chat/
+  package.json                    Bundle and Browser-client manifests
+  cordis.patch.yml                Host Loader row
+  src/index.ts                    Empty Host plugin entry
+  src/client/index.ts             Slot registration and composition
+  src/client/controller.ts        Side-session lifecycle and streaming
+  src/client/selection.ts         Assistant-message selection validation
+  src/client/context.ts           Bounded first-prompt assembly
+  src/client/view.ts              Conversation snapshot projection
+  src/client/*.tsx                Launcher and side-panel UI
+  lib/index.js                    Prebuilt Host ESM bundle
+  lib/client.js                   Prebuilt Harness Browser module
 ```
 
-**After changing sources, run the build and commit the updated `lib/`** —
-the install-from-git contract above depends on committed artifacts.
+The Browser plugin registers two entries:
 
-## Debugging
+| Slot | ID/priority | Purpose |
+| --- | ---: | --- |
+| `shell.overlay` | `side-chat-launcher`, order `100` | Watches assistant-message selections and renders the launcher near the selection. |
+| `details` | dynamic, priority `-100` | Temporarily replaces the stock details panel while Side Chat is open. |
 
-- Host row present but nothing in the browser? Check `package.json`
-  `dsh.client` (platform/inject), the `exports["./client"]` → `lib/client.js`
-  artifact, and that the server was restarted.
-- The tool-details panel disappearing while the side chat is open is the
-  intended shadow behavior; it restores on close. Closing the side chat also
-  closes the details column (no public read of the layout state exists, so
-  close is unconditional).
-- Discarded side sessions stay archived in the host session registry — the
-  harness has no session-delete API; archiving hides them from all
-  grouping surfaces.
-- A `session window open() unavailable` error means the harness runtime
-  dropped the internal `Session.open()` this plugin uses to stream without
-  staging; re-check
-  `packages/client/runtime/src/client/sessions/session.ts` and adapt
-  `#openSideWindow` in `src/client/controller.ts`.
+The launcher accepts a selection only when both endpoints are inside the same assistant row identified by `[data-chat-flow-kind="assistant-step"]`. Opening Side Chat creates a controller record for the active main session and dynamically registers the `details` entry. Closing it disposes that entry, restoring the stock details panel.
+
+The UI uses Harness primitives, CSS Modules, `--dsw-*` semantic tokens, keyboard focus styles, and reduced-motion behavior. The Browser artifact uses Harness's required `window.__ModuleLoader__.load({ id, factory })` wrapper and leaves only Web platform module-table packages external.
+
+## Side-session lifecycle and data
+
+The first question connects to the main session's workspace, creates a blank side session, archives it immediately so it does not appear in normal sidebar/history groupings, and sends a bounded context prompt containing:
+
+- the selected passage;
+- the complete assistant message containing that passage;
+- the four most recent main-conversation transcript entries, clipped to the prompt limits; and
+- the user's question.
+
+The assembled context prompt is not shown as the user bubble in the Side Chat panel. Later questions are sent as plain text to the same side session.
+
+Closing the panel cancels active generation and drops the Browser controller record, but it does not physically delete the archived Harness session. DeepSeek Harness currently exposes archive behavior rather than a session-delete API, so retired side sessions can remain in the Host session registry.
+
+Side Chat has no plugin-owned Host database, settings document, credentials, or external network endpoint. Model requests and session persistence use the active Harness services.
+
+## Development
+
+A clean clone uses published Harness type declarations and does not require a sibling DeepSeek Harness checkout, `DSH_HARNESS_ROOT`, or generated local symlinks.
+
+```bash
+git clone https://github.com/minwoogwak99/side-chat.git
+cd side-chat
+npm ci
+npm run verify
+```
+
+`npm run verify` performs type checking, all unit tests, and both production bundles. After changing source files, commit the regenerated `lib/index.js` and `lib/client.js`; pinned GitHub installation depends on those prebuilt artifacts.
+
+## Publishing
+
+Before publishing a release:
+
+1. Run `npm ci` and `npm run verify`.
+2. Confirm that the regenerated `lib/` artifacts are committed.
+3. Run `npm pack --dry-run --ignore-scripts` and inspect the file list.
+4. Install the tarball into a temporary `$DSH_HOME` Web profile with the pinned npx CLI.
+5. Verify the generated Cordis configuration and `/plugins/dsh-plugin-side-chat/client.js` response.
+6. Publish with `npm publish --access public`, or tag the prebuilt GitHub revision.
+
+Record the exact Harness version tested by each release because developer-preview releases can introduce compatibility changes.
+
+## Troubleshooting and limitations
+
+- If the Host row loads but the Browser entry does not, confirm the `dsh.client` manifest, `exports["./client"]`, prebuilt `lib/client.js`, and a full Web restart.
+- Side Chat intentionally shadows the stock details panel while open. Closing Side Chat restores the stock entry and closes the details column.
+- If selection no longer opens the launcher, check whether the Harness conversation UI still applies `[data-chat-flow-kind="assistant-step"]` to assistant rows.
+- A `session window open() unavailable` error means the installed Harness runtime no longer exposes the internal `Session.open()` seam used to stream without staging. Revalidate `SideChatController.#openSideWindow` against the target Harness release.
+- Retired side sessions are archived, not physically deleted.
+
+## References
+
+- [DeepSeek Harness Quick Start](https://deepseek-harness.github.io/deepseek-harness/en/guide/quickstart)
+- [Package and install a plugin](https://deepseek-harness.github.io/deepseek-harness/en/develop/basic/publish)
+- [Your first Harness plugin](https://deepseek-harness.github.io/deepseek-harness/en/develop/basic/)
+- [DeepSeek Harness architecture](https://deepseek-harness.github.io/deepseek-harness/en/reference/)
+- [DeepSeek Harness source repository](https://github.com/deepseek-ai/deepseek-harness)
 
 ## License
 

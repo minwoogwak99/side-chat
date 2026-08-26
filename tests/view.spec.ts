@@ -179,7 +179,16 @@ describe('deriveSideView', () => {
     const sendError = deriveSideView(undefined, 'q', { status: 'error', error: 'boom' })
     expect(sendError.error).toBe('boom')
     const promptError = deriveSideView(
-      sideSnapshot({ promptError: { op: 'send', error: { code: 'model-unavailable', message: 'no route', details: {} } } }),
+      sideSnapshot({
+        promptError: {
+          op: 'send',
+          error: {
+            code: 'model-unavailable',
+            message: 'no route',
+            details: { provider: 'test-provider', model: 'test-model' },
+          },
+        },
+      }),
       'q',
       { status: 'idle' },
     )

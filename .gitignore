@@ -1,4 +1,80 @@
+# Dependencies and package-manager caches
 node_modules/
-.DS_Store
-*.log
+.npm/
+.pnpm-store/
+.yarn/
+
+# This repository uses npm and commits package-lock.json.
+pnpm-lock.yaml
+yarn.lock
+bun.lock
+bun.lockb
+
+# Build, test, and tool caches
+coverage/
+.nyc_output/
+.vitest/
+.vite/
+.turbo/
+.cache/
+.eslintcache
 *.tsbuildinfo
+dist/
+out/
+.output/
+
+# Generated release archives
+*.tgz
+*.tar.gz
+*.zip
+
+# Logs and process files
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+*.pid
+*.pid.lock
+
+# Secrets and machine-local configuration
+.env
+.env.*
+!.env.example
+.npmrc
+*.pem
+*.key
+*.local
+cordis.local.yml
+
+# Local DeepSeek Harness homes and runtime data
+.dsh/
+.dsh-home/
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.part
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*~
+
+# Editors and IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Operating-system metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Desktop.ini

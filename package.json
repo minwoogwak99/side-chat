@@ -2,18 +2,40 @@
   "name": "dsh-plugin-side-chat",
   "description": "Web side-chat plugin: select a passage of an assistant message, ask follow-up questions in a right-side panel backed by a fresh side session",
   "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/minwoogwak99/side-chat.git"
+  },
+  "homepage": "https://github.com/minwoogwak99/side-chat#readme",
+  "bugs": {
+    "url": "https://github.com/minwoogwak99/side-chat/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",
     "./client": "./lib/client.js",
-    "./src/*": "./src/*",
+    "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "cordis.patch.yml",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "keywords": [
     "dsh-plugin",
     "deepseek-harness",
-    "deepseek"
+    "deepseek",
+    "side-chat",
+    "chat",
+    "web"
   ],
   "dsh": {
     "bundle": {
@@ -21,21 +43,57 @@
     },
     "client": {
       "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-api-remotes",
         "@deepseek-ai/dsh-client-locale",
-        "@deepseek-ai/dsh-client-ui-layout"
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-conversation"
       ],
       "platform": "web"
     }
   },
   "scripts": {
-    "link-harness": "node scripts/link-harness.mjs",
-    "typecheck": "node scripts/link-harness.mjs && tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "build": "npm run typecheck && tsdown",
     "test": "vitest run",
-    "bundle": "tsdown"
+    "bundle": "tsdown",
+    "verify": "npm run typecheck && npm test && npm run bundle",
+    "prepack": "npm run verify"
   },
-  "license": "MIT",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-api-remotes": "^0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-locale": "^0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-runtime": "^0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-conversation": "^0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-layout": "^0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-primitives": "^0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-slots": "^0.1.1-rc.2",
+    "react": "^18.3.1"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": { "optional": true },
+    "@deepseek-ai/dsh-api-remotes": { "optional": true },
+    "@deepseek-ai/dsh-client-locale": { "optional": true },
+    "@deepseek-ai/dsh-client-runtime": { "optional": true },
+    "@deepseek-ai/dsh-client-ui-conversation": { "optional": true },
+    "@deepseek-ai/dsh-client-ui-layout": { "optional": true },
+    "@deepseek-ai/dsh-client-ui-primitives": { "optional": true },
+    "@deepseek-ai/dsh-client-ui-slots": { "optional": true },
+    "react": { "optional": true }
+  },
   "devDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-api-remotes": "^0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-locale": "^0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-runtime": "^0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-conversation": "^0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-layout": "^0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-primitives": "^0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-slots": "^0.1.1-rc.2",
     "@types/node": "^26.3.0",
     "@types/react": "~18.3.1",
     "jsdom": "29.1.1",
@@ -44,5 +102,6 @@
     "tsdown": "^0.22.2",
     "typescript": "^5.9.3",
     "vitest": "^4.1.8"
-  }
+  },
+  "license": "MIT"
 }

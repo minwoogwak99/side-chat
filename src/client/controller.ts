@@ -22,9 +22,8 @@
  */
 import type {
   ConversationSnapshot, ISessions, IWorkspaces, ObservableSnapshot, SessionFace,
-  SessionId, SnapshotStore,
+  SessionId,
 } from '@deepseek-ai/dsh-client-runtime/client'
-import { createSnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
 import type { ILayout } from '@deepseek-ai/dsh-client-ui-layout/client'
 import { assistantMessageText, buildSideChatPrompt, extractTranscript } from './context.ts'
 import type { SelectionHit } from './selection.ts'
@@ -45,7 +44,7 @@ export interface SideChatControllerDeps {
 
 /** One main session's side-chat state. The store identity survives resets. */
 interface SideChatRecord {
-  readonly store: SnapshotStore<SideChatView>
+  readonly store: MutableSnapshot<SideChatView>
   quote: SelectionHit
   sideSessionId: SessionId | undefined
   status: 'idle' | 'creating' | 'error'
@@ -57,6 +56,29 @@ interface SideChatRecord {
   hidden: boolean
   /** Typed text of the first ask (the panel's display for the assembled prompt row). */
   firstQuestion: string | undefined
+}
+
+/** Plugin-local writable observable; the controller replaces whole views only. */
+interface MutableSnapshot<T> extends ObservableSnapshot<T> {
+  set(next: T): void
+}
+
+/** Create the minimal synchronous snapshot source required by the panel hook. */
+function createMutableSnapshot<T>(initial: T): MutableSnapshot<T> {
+  let snapshot = initial
+  const listeners = new Set<() => void>()
+  return {
+    getSnapshot: () => snapshot,
+    subscribe: (listener) => {
+      listeners.add(listener)
+      return () => { listeners.delete(listener) }
+    },
+    set: (next) => {
+      if (Object.is(snapshot, next)) return
+      snapshot = next
+      for (const listener of [...listeners]) listener()
+    },
+  }
 }
 
 /** Static empty source for scopes whose session has no record (yet). */
@@ -229,7 +251,7 @@ export class SideChatController {
   #recordOf(sessionId: SessionId): SideChatRecord {
     let record = this.#records.get(sessionId)
     if (record === undefined) {
-      const store = createSnapshotStore<SideChatView>(deriveSideView(undefined, '', { status: 'idle' }))
+      const store = createMutableSnapshot<SideChatView>(deriveSideView(undefined, '', { status: 'idle' }))
       record = {
         store,
         quote: { nodeKey: '', text: '', rect: { top: 0, left: 0, bottom: 0, right: 0 } },
