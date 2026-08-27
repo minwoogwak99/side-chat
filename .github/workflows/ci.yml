@@ -2,27 +2,29 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   verify:
+    name: Verify (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22.19.0, 24]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11.7.0
-
-      - name: Use Node.js 24
+      - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ matrix.node-version }}
           cache: npm
 
       - name: Install dependencies
@@ -34,14 +36,51 @@ jobs:
       - name: Ensure prebuilt bundles are current
         run: git diff --exit-code -- lib
 
+      - name: Inspect the release artifact
+        run: npm pack --dry-run --ignore-scripts
+
+  packed-install:
+    name: Packed install and Web smoke
+    needs: verify
+    runs-on: ubuntu-latest
+    env:
+      DSH_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm for the Harness plugin command
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - name: Use Node.js 22.19
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+
+      - name: Install pinned DSH CLI
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: npm install --global @deepseek-ai/dsh@0.1.1-rc.2
+
       - name: Pack the release artifact
         run: npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP"
 
-      - name: Test the standard npx Web installation path
+      - name: Install the packed plugin into a clean Web profile
+        env:
+          DSH_HOME: ${{ runner.temp }}/dsh-home
+        run: dsh plugin --profile web add "$RUNNER_TEMP"/dsh-plugin-side-chat-*.tgz
+
+      - name: Verify the generated profile configuration
         env:
           DSH_HOME: ${{ runner.temp }}/dsh-home
         run: |
-          npx --yes @deepseek-ai/dsh@0.1.1-rc.2 plugin --profile web add "$RUNNER_TEMP"/dsh-plugin-side-chat-*.tgz
-          node --input-type=module -e "import { readFileSync } from 'node:fs'; import { join } from 'node:path'; const home = process.env.DSH_HOME; const profile = JSON.parse(readFileSync(join(home, 'profiles/web/package.json'), 'utf8')); if (!profile.dsh.profile.bundles.includes('dsh-plugin-side-chat')) throw new Error('bundle missing from web profile'); const plugin = JSON.parse(readFileSync(join(home, 'profiles/web/node_modules/dsh-plugin-side-chat/package.json'), 'utf8')); if (plugin.name !== 'dsh-plugin-side-chat' || plugin.dsh?.client?.platform !== 'web') throw new Error('installed plugin manifest mismatch')"
-          npx --yes @deepseek-ai/dsh@0.1.1-rc.2 --profile web --dump-config > "$RUNNER_TEMP/dsh-web-config.yml"
+          dsh --profile web --dump-config > "$RUNNER_TEMP/dsh-web-config.yml"
           grep -q "name: dsh-plugin-side-chat" "$RUNNER_TEMP/dsh-web-config.yml"
+
+      - name: Start Web and fetch the installed client module
+        env:
+          DSH_HOME: ${{ runner.temp }}/dsh-home
+          DSH_AGENTS_HOME: ${{ runner.temp }}/dsh-agents
+        run: node scripts/verify-packed-web.mjs
