@@ -1,7 +1,7 @@
 {
   "name": "dsh-plugin-side-chat",
   "description": "Web side-chat plugin: select a passage of an assistant message, ask follow-up questions in a right-side panel backed by a fresh side session",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/minwoogwak99/side-chat.git"

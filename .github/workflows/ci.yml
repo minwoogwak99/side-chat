@@ -70,7 +70,7 @@ jobs:
       - name: Install the packed plugin into a clean Web profile
         env:
           DSH_HOME: ${{ runner.temp }}/dsh-home
-        run: dsh plugin --profile web add "$RUNNER_TEMP"/dsh-plugin-side-chat-*.tgz
+        run: dsh plugin --profile web add -w "$RUNNER_TEMP"/dsh-plugin-side-chat-*.tgz
 
       - name: Verify the generated profile configuration
         env:

@@ -4,7 +4,7 @@
 
 Select text in an assistant response, choose **Ask about this**, and continue in a temporary side conversation rendered in the right-hand details column. The main conversation remains visible and unchanged.
 
-> Compatibility: version 0.1.0 targets DeepSeek Harness 0.1.1-rc.2, Cordis 4.0.1, and Node.js 22.19+ or 24+.
+> Compatibility: version 0.1.x targets DeepSeek Harness 0.1.1-rc.2, Cordis 4.0.1, and Node.js 22.19+ or 24+.
 
 ## Features
 
@@ -26,17 +26,19 @@ The current `dsh plugin` command delegates package management to `pnpm`, so `pnp
 npm install --global pnpm
 ```
 
-After `dsh-plugin-side-chat` has been published to npm:
+Each DSH profile is a one-package pnpm workspace. Pass `-w` to explicitly target that workspace root and avoid `ERR_PNPM_ADDING_TO_ROOT` on pnpm versions that enforce the root-add safeguard.
+
+Install the npm release:
 
 ```bash
-npx @deepseek-ai/dsh plugin --profile web add dsh-plugin-side-chat
+npx @deepseek-ai/dsh plugin --profile web add -w dsh-plugin-side-chat
 npx @deepseek-ai/dsh web
 ```
 
 Install a pinned GitHub revision before or instead of an npm release:
 
 ```bash
-npx @deepseek-ai/dsh plugin --profile web add \
+npx @deepseek-ai/dsh plugin --profile web add -w \
   github:minwoogwak99/side-chat#<tag-or-commit>
 npx @deepseek-ai/dsh web
 ```
@@ -46,15 +48,15 @@ One-off `npx` execution does not make the plugin installation temporary. Harness
 This release is tested with `@deepseek-ai/dsh@0.1.1-rc.2`. Harness is in developer preview, so pin the same CLI version for reproducible installation and startup:
 
 ```bash
-npx @deepseek-ai/dsh@0.1.1-rc.2 plugin --profile web add dsh-plugin-side-chat
+npx @deepseek-ai/dsh@0.1.1-rc.2 plugin --profile web add -w dsh-plugin-side-chat
 npx @deepseek-ai/dsh@0.1.1-rc.2 web
 ```
 
 Update or remove the npm package with the same profile:
 
 ```bash
-npx @deepseek-ai/dsh plugin --profile web update dsh-plugin-side-chat@latest
-npx @deepseek-ai/dsh plugin --profile web remove dsh-plugin-side-chat
+npx @deepseek-ai/dsh plugin --profile web update -w dsh-plugin-side-chat@latest
+npx @deepseek-ai/dsh plugin --profile web remove -w dsh-plugin-side-chat
 ```
 
 Restart the Web process after installing, updating, or removing the plugin so Harness rebuilds the Browser client-module graph.
@@ -64,16 +66,16 @@ Restart the Web process after installing, updating, or removing the plugin so Ha
 Any profile that includes the Harness Web application can host Side Chat:
 
 ```bash
-npx @deepseek-ai/dsh plugin --profile <profile> add dsh-plugin-side-chat
+npx @deepseek-ai/dsh plugin --profile <profile> add -w dsh-plugin-side-chat
 ```
 
 For a local checkout during development:
 
 ```bash
-npx @deepseek-ai/dsh plugin --profile <profile> add /absolute/path/to/side-chat
+npx @deepseek-ai/dsh plugin --profile <profile> add -w /absolute/path/to/side-chat
 ```
 
-If `dsh` is already installed on `PATH`, omit the `npx @deepseek-ai/dsh` prefix. When working from the DeepSeek Harness source repository, the equivalent command is `pnpm dsh plugin --profile <profile> add <package-spec>`.
+If `dsh` is already installed on `PATH`, omit the `npx @deepseek-ai/dsh` prefix. When working from the DeepSeek Harness source repository, the equivalent command is `pnpm dsh plugin --profile <profile> add -w <package-spec>`.
 
 No install-time build is required. The repository and npm package include prebuilt `lib/index.js` and `lib/client.js` artifacts, so GitHub installs do not need a `prepare` script or pnpm `allowBuilds` configuration.
 
@@ -149,7 +151,7 @@ Before publishing a release:
 1. Run `npm ci` and `npm run verify`.
 2. Confirm that the regenerated `lib/` artifacts are committed.
 3. Run `npm pack --dry-run --ignore-scripts` and inspect the file list.
-4. Install the tarball into a temporary `$DSH_HOME` Web profile with the pinned npx CLI.
+4. Install the tarball with `add -w` into a temporary `$DSH_HOME` Web profile with the pinned npx CLI.
 5. Verify the generated Cordis configuration and `/plugins/dsh-plugin-side-chat/client.js` response.
 6. Publish with `npm publish --access public`, or tag the prebuilt GitHub revision.
 

@@ -6,6 +6,14 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-08-27
+
+### Fixed
+
+- Installation, update, removal, and packed-artifact verification now pass
+  pnpm's explicit workspace-root flag through `dsh plugin`, avoiding
+  `ERR_PNPM_ADDING_TO_ROOT` in DSH profiles.
+
 ## [0.1.1] - 2026-08-26
 
 ### Added
